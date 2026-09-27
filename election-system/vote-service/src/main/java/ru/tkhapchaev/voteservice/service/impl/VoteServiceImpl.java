@@ -3,7 +3,6 @@ package ru.tkhapchaev.voteservice.service.impl;
 import feign.FeignException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.tkhapchaev.voteservice.client.ElectionServiceClient;
@@ -12,12 +11,9 @@ import ru.tkhapchaev.voteservice.dto.internal.CandidateLookupResponse;
 import ru.tkhapchaev.voteservice.dto.internal.ElectionStatusLookupResponse;
 import ru.tkhapchaev.voteservice.dto.internal.VoterLookupResponse;
 import ru.tkhapchaev.voteservice.entity.VoteEntity;
-import ru.tkhapchaev.voteservice.kafka.VoteCreatedEvent;
-import ru.tkhapchaev.voteservice.kafka.VoteEventPublisher;
 import ru.tkhapchaev.voteservice.repository.VoteRepository;
 import ru.tkhapchaev.voteservice.service.VoteService;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -29,10 +25,6 @@ public class VoteServiceImpl implements VoteService {
     private final VoteRepository voteRepository;
     private final ElectionServiceClient electionServiceClient;
     private final VoterServiceClient voterServiceClient;
-    private final VoteEventPublisher voteEventPublisher;
-
-    @Value("${app.kafka.vote-created-topic:vote-created}")
-    private String voteCreatedTopic;
 
     @Override
     @Transactional
@@ -63,19 +55,7 @@ public class VoteServiceImpl implements VoteService {
         vote.setElectionId(candidate.electionId());
         vote.setUserId(voter.userId());
 
-        VoteEntity saved = voteRepository.save(vote);
-        Instant eventCreatedAt = saved.getCreatedAt() != null ? saved.getCreatedAt() : Instant.now();
-
-        voteEventPublisher.publishVoteCreated(new VoteCreatedEvent(
-                saved.getId(),
-                saved.getCandidateId(),
-                saved.getVoterId(),
-                saved.getElectionId(),
-                saved.getUserId(),
-                eventCreatedAt
-        ), voteCreatedTopic);
-
-        return saved;
+        return voteRepository.save(vote);
     }
 
     @Override

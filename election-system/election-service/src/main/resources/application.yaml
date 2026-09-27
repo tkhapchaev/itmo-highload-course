@@ -20,13 +20,6 @@ spring:
     enabled: true
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
-    consumer:
-      auto-offset-reset: earliest
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-      properties:
-        spring.json.trusted.packages: "*"
-        spring.json.value.default.type: ru.tkhapchaev.electionservice.kafka.VoteCreatedEvent
 
 eureka:
   client:
@@ -36,10 +29,6 @@ eureka:
 springdoc:
   swagger-ui:
     path: /swagger
-
-app:
-  kafka:
-    vote-created-topic: vote-created
 
 management:
   endpoints:

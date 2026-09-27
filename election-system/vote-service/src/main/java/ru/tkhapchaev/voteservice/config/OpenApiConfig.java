@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Configuration;
         info = @Info(
                 title = "Vote Service API",
                 version = "1.0",
-                description = "REST API for voting with HATEOAS and Kafka events"
+                description = "REST API for voting with HATEOAS"
         )
 )
 public class OpenApiConfig {

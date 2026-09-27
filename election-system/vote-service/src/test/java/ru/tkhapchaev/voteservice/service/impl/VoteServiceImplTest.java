@@ -1,25 +1,19 @@
 package ru.tkhapchaev.voteservice.service.impl;
 
 import jakarta.persistence.EntityNotFoundException;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 import ru.tkhapchaev.voteservice.client.ElectionServiceClient;
 import ru.tkhapchaev.voteservice.client.VoterServiceClient;
 import ru.tkhapchaev.voteservice.dto.internal.CandidateLookupResponse;
 import ru.tkhapchaev.voteservice.dto.internal.ElectionStatusLookupResponse;
 import ru.tkhapchaev.voteservice.dto.internal.VoterLookupResponse;
 import ru.tkhapchaev.voteservice.entity.VoteEntity;
-import ru.tkhapchaev.voteservice.kafka.VoteCreatedEvent;
-import ru.tkhapchaev.voteservice.kafka.VoteEventPublisher;
 import ru.tkhapchaev.voteservice.repository.VoteRepository;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -27,7 +21,6 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -45,37 +38,26 @@ class VoteServiceImplTest {
     @Mock
     private VoterServiceClient voterServiceClient;
 
-    @Mock
-    private VoteEventPublisher voteEventPublisher;
-
     @InjectMocks
     private VoteServiceImpl voteService;
 
-    @BeforeEach
-    void setUp() {
-        ReflectionTestUtils.setField(voteService, "voteCreatedTopic", "vote-created");
-    }
-
     @Test
-    void create_shouldSaveVoteAndPublishEvent() {
+    void create_shouldSaveVote() {
         UUID candidateId = UUID.randomUUID();
         UUID voterId = UUID.randomUUID();
         UUID electionId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
-        UUID voteId = UUID.randomUUID();
-        Instant createdAt = Instant.parse("2026-01-01T00:00:00Z");
 
         VoteEntity input = new VoteEntity();
         input.setCandidateId(candidateId);
         input.setVoterId(voterId);
 
         VoteEntity saved = new VoteEntity();
-        saved.setId(voteId);
+        saved.setId(UUID.randomUUID());
         saved.setCandidateId(candidateId);
         saved.setVoterId(voterId);
         saved.setElectionId(electionId);
         saved.setUserId(userId);
-        saved.setCreatedAt(createdAt);
 
         when(voteRepository.existsByVoterId(voterId)).thenReturn(false);
         when(electionServiceClient.getCandidate(candidateId))
@@ -92,17 +74,6 @@ class VoteServiceImplTest {
         assertThat(result).isEqualTo(saved);
         assertThat(input.getElectionId()).isEqualTo(electionId);
         assertThat(input.getUserId()).isEqualTo(userId);
-
-        ArgumentCaptor<VoteCreatedEvent> eventCaptor = ArgumentCaptor.forClass(VoteCreatedEvent.class);
-        verify(voteEventPublisher).publishVoteCreated(eventCaptor.capture(), eq("vote-created"));
-
-        VoteCreatedEvent event = eventCaptor.getValue();
-        assertThat(event.voteId()).isEqualTo(voteId);
-        assertThat(event.candidateId()).isEqualTo(candidateId);
-        assertThat(event.voterId()).isEqualTo(voterId);
-        assertThat(event.electionId()).isEqualTo(electionId);
-        assertThat(event.userId()).isEqualTo(userId);
-        assertThat(event.createdAt()).isEqualTo(createdAt);
     }
 
     @Test
@@ -120,7 +91,7 @@ class VoteServiceImplTest {
                 .hasMessageContaining("already voted");
 
         verify(voteRepository, never()).save(any());
-        verifyNoInteractions(electionServiceClient, voterServiceClient, voteEventPublisher);
+        verifyNoInteractions(electionServiceClient, voterServiceClient);
     }
 
     @Test
@@ -146,7 +117,6 @@ class VoteServiceImplTest {
                 .hasMessageContaining("different elections");
 
         verify(voteRepository, never()).save(any());
-        verify(voteEventPublisher, never()).publishVoteCreated(any(), any());
     }
 
     @Test
@@ -173,7 +143,6 @@ class VoteServiceImplTest {
                 .hasMessageContaining("ACTIVE elections");
 
         verify(voteRepository, never()).save(any());
-        verify(voteEventPublisher, never()).publishVoteCreated(any(), any());
     }
 
     @Test
@@ -201,7 +170,6 @@ class VoteServiceImplTest {
                 .hasMessageContaining("already voted in this election");
 
         verify(voteRepository, never()).save(any());
-        verify(voteEventPublisher, never()).publishVoteCreated(any(), any());
     }
 
     @Test
@@ -238,7 +206,6 @@ class VoteServiceImplTest {
         assertThat(existing.getVoterId()).isEqualTo(newVoterId);
         assertThat(existing.getElectionId()).isEqualTo(electionId);
         assertThat(existing.getUserId()).isEqualTo(userId);
-        verify(voteEventPublisher, never()).publishVoteCreated(any(), any());
     }
 
     @Test
