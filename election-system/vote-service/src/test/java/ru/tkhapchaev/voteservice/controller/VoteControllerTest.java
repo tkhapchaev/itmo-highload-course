@@ -13,9 +13,12 @@ import java.time.Instant;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -60,6 +63,32 @@ class VoteControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(vote.getId().toString()))
                 .andExpect(jsonPath("$.candidateId").value(vote.getCandidateId().toString()));
+    }
+
+    @Test
+    void delete_shouldRevokeVote() throws Exception {
+        UUID voteId = UUID.randomUUID();
+
+        mockMvc.perform(delete("/api/votes/{id}", voteId))
+                .andExpect(status().isNoContent());
+
+        verify(voteService).delete(voteId);
+    }
+
+    @Test
+    void update_shouldNotBeSupported() throws Exception {
+        VoteEntity vote = buildVote();
+        String body = """
+                {
+                  "candidateId": "%s",
+                  "voterId": "%s"
+                }
+                """.formatted(vote.getCandidateId(), vote.getVoterId());
+
+        mockMvc.perform(put("/api/votes/{id}", vote.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isMethodNotAllowed());
     }
 
     private VoteEntity buildVote() {

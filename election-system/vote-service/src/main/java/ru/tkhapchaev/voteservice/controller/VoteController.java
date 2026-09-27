@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -62,15 +61,6 @@ public class VoteController {
 
         return ResponseEntity.created(URI.create("/api/votes/" + created.getId()))
                 .body(toModel(created));
-    }
-
-    @PutMapping("/{id}")
-    public EntityModel<VoteResponse> update(@PathVariable UUID id, @Valid @RequestBody VoteRequest request) {
-        VoteEntity vote = new VoteEntity();
-        vote.setCandidateId(request.candidateId());
-        vote.setVoterId(request.voterId());
-
-        return toModel(voteService.update(id, vote));
     }
 
     @DeleteMapping("/{id}")

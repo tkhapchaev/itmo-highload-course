@@ -173,66 +173,6 @@ class VoteServiceImplTest {
     }
 
     @Test
-    void update_shouldSaveVote_whenDataIsValid() {
-        UUID voteId = UUID.randomUUID();
-        UUID existingVoterId = UUID.randomUUID();
-        UUID newVoterId = UUID.randomUUID();
-        UUID candidateId = UUID.randomUUID();
-        UUID electionId = UUID.randomUUID();
-        UUID userId = UUID.randomUUID();
-
-        VoteEntity existing = new VoteEntity();
-        existing.setId(voteId);
-        existing.setVoterId(existingVoterId);
-
-        VoteEntity update = new VoteEntity();
-        update.setCandidateId(candidateId);
-        update.setVoterId(newVoterId);
-
-        when(voteRepository.findById(voteId)).thenReturn(Optional.of(existing));
-        when(voteRepository.existsByVoterId(newVoterId)).thenReturn(false);
-        when(electionServiceClient.getCandidate(candidateId))
-                .thenReturn(new CandidateLookupResponse(candidateId, electionId));
-        when(voterServiceClient.getVoter(newVoterId))
-                .thenReturn(new VoterLookupResponse(newVoterId, userId, electionId));
-        when(electionServiceClient.getElectionStatus(electionId))
-                .thenReturn(new ElectionStatusLookupResponse(1, "ACTIVE"));
-        when(voteRepository.save(existing)).thenReturn(existing);
-
-        VoteEntity result = voteService.update(voteId, update);
-
-        assertThat(result).isEqualTo(existing);
-        assertThat(existing.getCandidateId()).isEqualTo(candidateId);
-        assertThat(existing.getVoterId()).isEqualTo(newVoterId);
-        assertThat(existing.getElectionId()).isEqualTo(electionId);
-        assertThat(existing.getUserId()).isEqualTo(userId);
-    }
-
-    @Test
-    void update_shouldThrow_whenNewVoterAlreadyVoted() {
-        UUID voteId = UUID.randomUUID();
-        UUID existingVoterId = UUID.randomUUID();
-        UUID newVoterId = UUID.randomUUID();
-
-        VoteEntity existing = new VoteEntity();
-        existing.setId(voteId);
-        existing.setVoterId(existingVoterId);
-
-        VoteEntity update = new VoteEntity();
-        update.setVoterId(newVoterId);
-        update.setCandidateId(UUID.randomUUID());
-
-        when(voteRepository.findById(voteId)).thenReturn(Optional.of(existing));
-        when(voteRepository.existsByVoterId(newVoterId)).thenReturn(true);
-
-        assertThatThrownBy(() -> voteService.update(voteId, update))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("already voted");
-
-        verify(voteRepository, never()).save(any());
-    }
-
-    @Test
     void getById_shouldReturnVote() {
         UUID id = UUID.randomUUID();
         VoteEntity vote = new VoteEntity();

@@ -12,8 +12,6 @@ public interface VoteService {
 
     List<VoteEntity> getAll(UUID candidateId, UUID userId);
 
-    VoteEntity update(UUID id, VoteEntity vote);
-
     void delete(UUID id);
 
     long countByElectionId(UUID electionId);
