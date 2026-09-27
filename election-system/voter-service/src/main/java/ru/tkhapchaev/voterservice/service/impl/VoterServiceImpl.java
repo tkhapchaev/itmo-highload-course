@@ -84,18 +84,6 @@ public class VoterServiceImpl implements VoterService {
         return voterRepository.countByElectionId(electionId);
     }
 
-    @Override
-    public VoterEntity getByUserAndElection(UUID userId, UUID electionId) {
-        if (!userRepository.existsById(userId)) {
-            throw new EntityNotFoundException("User not found: " + userId);
-        }
-
-        return voterRepository.findByUserIdAndElectionId(userId, electionId)
-                .orElseThrow(() -> new EntityNotFoundException(
-                        "Voter not found for user " + userId + " and election " + electionId
-                ));
-    }
-
     private void ensureOpenElection(UUID electionId) {
         ElectionStatusLookupResponse status;
         try {

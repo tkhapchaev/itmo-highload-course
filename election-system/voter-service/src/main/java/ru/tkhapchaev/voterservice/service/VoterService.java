@@ -17,6 +17,4 @@ public interface VoterService {
     void delete(UUID id);
 
     long countByElectionId(UUID electionId);
-
-    VoterEntity getByUserAndElection(UUID userId, UUID electionId);
 }
