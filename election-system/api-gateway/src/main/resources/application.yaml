@@ -1,0 +1,79 @@
+﻿server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      server:
+        webflux:
+          default-filters:
+            - PreserveHostHeader
+          routes:
+            - id: election-service-elections
+              uri: lb://election-service
+              predicates:
+                - Path=/api/elections/**
+            - id: election-service-candidates
+              uri: lb://election-service
+              predicates:
+                - Path=/api/candidates/**
+            - id: election-service-statuses
+              uri: lb://election-service
+              predicates:
+                - Path=/api/election-statuses/**
+            - id: voter-service-users
+              uri: lb://voter-service
+              predicates:
+                - Path=/api/users/**
+            - id: voter-service-voters
+              uri: lb://voter-service
+              predicates:
+                - Path=/api/voters/**
+            - id: vote-service-votes
+              uri: lb://vote-service
+              predicates:
+                - Path=/api/votes/**
+
+            - id: election-service-openapi
+              uri: lb://election-service
+              predicates:
+                - Path=/v3/api-docs/election-service
+              filters:
+                - SetPath=/v3/api-docs
+            - id: voter-service-openapi
+              uri: lb://voter-service
+              predicates:
+                - Path=/v3/api-docs/voter-service
+              filters:
+                - SetPath=/v3/api-docs
+            - id: vote-service-openapi
+              uri: lb://vote-service
+              predicates:
+                - Path=/v3/api-docs/vote-service
+              filters:
+                - SetPath=/v3/api-docs
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka}
+
+springdoc:
+  swagger-ui:
+    path: /swagger
+    disable-swagger-default-url: true
+    urls:
+      - name: election-service
+        url: /v3/api-docs/election-service
+      - name: voter-service
+        url: /v3/api-docs/voter-service
+      - name: vote-service
+        url: /v3/api-docs/vote-service
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
